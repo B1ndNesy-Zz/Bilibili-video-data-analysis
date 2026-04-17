@@ -199,6 +199,24 @@ function renderCommentLike(data) {
   });
 }
 
+function renderCleaningSummary(data) {
+  const container = document.getElementById("cleaning-summary");
+  const items = [
+    ["基础清洗弹幕", numberText(data.basic_clean_count)],
+    ["抽奖弹幕过滤", numberText(data.lottery_filtered_count)],
+    ["过滤比例", rateText(data.filter_ratio)],
+    ["内容讨论弹幕", numberText(data.content_discussion_count)],
+  ];
+  container.innerHTML = items
+    .map(([label, value]) => `
+      <div class="cleaning-card">
+        <p>${label}</p>
+        <strong>${value}</strong>
+      </div>
+    `)
+    .join("");
+}
+
 function renderKeywordChart(id, data, color) {
   const chart = mountChart(id);
   const ordered = [...data].slice(0, 20).reverse();
@@ -235,7 +253,9 @@ async function init() {
     interaction,
     timeline,
     peaks,
-    danmakuKeywords,
+    cleaningSummary,
+    danmakuBeforeKeywords,
+    danmakuAfterKeywords,
     commentKeywords,
     sentiment,
     commentLike,
@@ -245,7 +265,9 @@ async function init() {
     getJson("/api/interaction"),
     getJson("/api/danmaku-timeline"),
     getJson("/api/danmaku-peaks"),
-    getJson("/api/keywords?source=danmaku&limit=30"),
+    getJson("/api/danmaku-cleaning-summary"),
+    getJson("/api/keywords?source=danmaku_before&limit=30"),
+    getJson("/api/keywords?source=danmaku_after&limit=30"),
     getJson("/api/keywords?source=comment&limit=30"),
     getJson("/api/sentiment"),
     getJson("/api/comment-like-sentiment"),
@@ -258,7 +280,9 @@ async function init() {
   renderTimeline(timeline);
   renderPeaks(peaks);
   renderCommentLike(commentLike);
-  renderKeywordChart("danmaku-keyword-chart", danmakuKeywords, "#128c7e");
+  renderCleaningSummary(cleaningSummary);
+  renderKeywordChart("danmaku-before-keyword-chart", danmakuBeforeKeywords, "#d99a21");
+  renderKeywordChart("danmaku-after-keyword-chart", danmakuAfterKeywords, "#128c7e");
   renderKeywordChart("comment-keyword-chart", commentKeywords, "#2f6fed");
   renderInsights(insights);
 }

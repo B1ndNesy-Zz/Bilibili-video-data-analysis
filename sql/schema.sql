@@ -87,6 +87,25 @@ CREATE TABLE IF NOT EXISTS keyword_metrics (
   UNIQUE KEY uk_source_keyword (source_type, keyword)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS danmaku_cleaning_summary (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  raw_sample_count INT,
+  basic_clean_count INT,
+  lottery_filtered_count INT,
+  content_discussion_count INT,
+  filter_ratio DOUBLE,
+  retain_ratio DOUBLE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS danmaku_keyword_compare (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  stage VARCHAR(64) NOT NULL,
+  keyword VARCHAR(80) NOT NULL,
+  word_count INT NOT NULL,
+  rank_order INT NOT NULL,
+  UNIQUE KEY uk_stage_keyword (stage, keyword)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS sentiment_metrics (
   id INT AUTO_INCREMENT PRIMARY KEY,
   source_type VARCHAR(32) NOT NULL,

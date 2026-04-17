@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import math
 import re
+import shutil
 from collections import Counter
 from pathlib import Path
 from typing import Iterable
@@ -26,6 +27,45 @@ for word in ["影视飓风", "iPhone", "Pro", "Air", "苹果", "评测", "影像
     jieba.add_word(word)
 
 
+LOTTERY_KEYWORDS = [
+    "抽奖",
+    "抽抽",
+    "抽到",
+    "中奖",
+    "求中",
+    "必中",
+    "想中",
+    "蹲奖",
+    "参与",
+    "来了",
+    "冲冲冲",
+    "许愿",
+    "保佑",
+    "欧皇",
+    "非酋",
+    "中了",
+    "抽中",
+    "奖品",
+    "开奖",
+    "送我",
+    "给我",
+    "选我",
+    "中我",
+    "我要",
+    "想要",
+    "一台",
+    "中中",
+    "中一个",
+    "中一次",
+    "中吧",
+    "可莉",
+    "无限",
+    "读者",
+]
+
+LOTTERY_PATTERN = re.compile("|".join(re.escape(keyword) for keyword in LOTTERY_KEYWORDS))
+
+
 def format_seconds(seconds: int | float) -> str:
     seconds = max(0, int(seconds))
     minute = seconds // 60
@@ -44,6 +84,23 @@ def clean_text(text: object) -> str:
     value = re.sub(r"[^\u4e00-\u9fa5A-Za-z0-9\s]", " ", value)
     value = re.sub(r"\s+", " ", value).strip()
     return value
+
+
+def is_lottery_danmaku(text: object) -> bool:
+    """Identify lottery participation danmaku that should not drive content-topic analysis."""
+    if pd.isna(text):
+        return False
+    value = str(text).strip()
+    if not value:
+        return False
+    compact = re.sub(r"\s+", "", value.lower())
+    if LOTTERY_PATTERN.search(compact):
+        return True
+    return bool(
+        re.search(r"中{2,}", compact)
+        or re.search(r"(抽|求|想|蹲|许愿).{0,6}(中|奖)", compact)
+        or re.search(r"(中|奖).{0,4}(我|吧|一次|一个|一台)", compact)
+    )
 
 
 def sentiment_score(text: str) -> float:
@@ -203,6 +260,28 @@ def build_danmaku_timeline(danmaku: pd.DataFrame, duration_seconds: int) -> pd.D
     ]
 
 
+def build_danmaku_cleaning_summary(
+    raw_count: int,
+    basic_clean_count: int,
+    lottery_count: int,
+    content_count: int,
+) -> pd.DataFrame:
+    filter_ratio = lottery_count / basic_clean_count if basic_clean_count else 0
+    retain_ratio = content_count / basic_clean_count if basic_clean_count else 0
+    return pd.DataFrame(
+        [
+            {
+                "raw_sample_count": raw_count,
+                "basic_clean_count": basic_clean_count,
+                "lottery_filtered_count": lottery_count,
+                "content_discussion_count": content_count,
+                "filter_ratio": round(filter_ratio, 4),
+                "retain_ratio": round(retain_ratio, 4),
+            }
+        ]
+    )
+
+
 def build_comment_like_sentiment(comments: pd.DataFrame) -> pd.DataFrame:
     if comments.empty:
         return pd.DataFrame(
@@ -231,6 +310,8 @@ def build_insights(
     interaction_metrics: pd.DataFrame,
     timeline: pd.DataFrame,
     keyword_metrics: pd.DataFrame,
+    danmaku_keyword_compare: pd.DataFrame,
+    danmaku_cleaning_summary: pd.DataFrame,
     sentiment_metrics: pd.DataFrame,
     comment_like_sentiment: pd.DataFrame,
 ) -> str:
@@ -239,8 +320,17 @@ def build_insights(
         f"{row.time_range}({int(row.danmaku_count)}条)"
         for row in top_peaks.itertuples(index=False)
     )
-    danmaku_keywords = (
-        keyword_metrics[keyword_metrics["source_type"] == "danmaku"]
+    danmaku_before_keywords = (
+        danmaku_keyword_compare[
+            danmaku_keyword_compare["stage"] == "before_lottery_filter"
+        ]
+        .head(8)["keyword"]
+        .tolist()
+    )
+    danmaku_after_keywords = (
+        danmaku_keyword_compare[
+            danmaku_keyword_compare["stage"] == "after_lottery_filter"
+        ]
         .head(8)["keyword"]
         .tolist()
     )
@@ -282,20 +372,49 @@ def build_insights(
             f"约 {top_like_group['avg_like_count']}。"
         )
 
+    lottery_line = "抽奖弹幕过滤样本不足。"
+    if not danmaku_cleaning_summary.empty:
+        summary = danmaku_cleaning_summary.iloc[0]
+        lottery_line = (
+            f"弹幕二次清洗识别并过滤抽奖参与弹幕 {int(summary['lottery_filtered_count']):,} 条，"
+            f"过滤比例约 {float(summary['filter_ratio']):.1%}；清洗后保留内容讨论弹幕 "
+            f"{int(summary['content_discussion_count']):,} 条。"
+        )
+
     lines = [
         f"1. 本项目分析视频《{video.get('title', '')}》，公开视频播放量为 {_format_number(video.get('view_count', 0))}，评论数为 {_format_number(video.get('reply_count', 0))}，弹幕数为 {_format_number(video.get('danmaku_count', 0))}。",
         f"2. 样本数据包含公开弹幕 {int(timeline['danmaku_count'].sum()) if not timeline.empty else 0:,} 条、公开评论样本 {int(comment_like_sentiment['sample_count'].sum()) if not comment_like_sentiment.empty else 0:,} 条；综合互动率约为 {overall_rate_value:.2%}，{best_metric_text}。",
         f"3. 弹幕密度最高的时间段集中在：{peak_text or '暂无'}，可作为定位视频高讨论片段的依据。",
-        f"4. 弹幕高频词包括：{'、'.join(danmaku_keywords) or '暂无'}；评论高频词包括：{'、'.join(comment_keywords) or '暂无'}。",
-        f"5. {'；'.join(sentiment_lines) or '情绪样本不足'}。{like_line}",
-        "6. 情绪识别基于 SnowNLP 的轻量级中文情感模型，结果适合做作品展示和探索性分析，不代表严格的舆情模型结论。",
+        f"4. 抽奖活动对弹幕关键词造成明显干扰，清洗前高频词包括：{'、'.join(danmaku_before_keywords) or '暂无'}；清洗后更接近内容讨论，高频词包括：{'、'.join(danmaku_after_keywords) or '暂无'}。",
+        f"5. {lottery_line}",
+        f"6. 评论高频词包括：{'、'.join(comment_keywords) or '暂无'}。{'；'.join(sentiment_lines) or '情绪样本不足'}。{like_line}",
+        "7. 弹幕抽奖识别使用可解释的业务规则；情绪识别基于 SnowNLP 的轻量级中文情感模型，结果适合做作品展示和探索性分析，不代表严格的舆情模型结论。",
     ]
     return "\n".join(lines)
 
 
-def generate_wordcloud(keyword_metrics: pd.DataFrame) -> None:
+def _write_wordcloud(frequencies: dict[str, int], filename: str, font_path: Path) -> None:
+    if not frequencies:
+        return
+    from wordcloud import WordCloud
+
+    cloud = WordCloud(
+        font_path=str(font_path),
+        width=1200,
+        height=720,
+        background_color="white",
+        colormap="viridis",
+        max_words=80,
+    ).generate_from_frequencies(frequencies)
+    cloud.to_file(str(SCREENSHOT_DIR / filename))
+
+
+def generate_wordcloud(
+    keyword_metrics: pd.DataFrame,
+    danmaku_keyword_compare: pd.DataFrame,
+) -> None:
     try:
-        from wordcloud import WordCloud
+        from wordcloud import WordCloud  # noqa: F401
     except Exception:
         return
 
@@ -308,20 +427,34 @@ def generate_wordcloud(keyword_metrics: pd.DataFrame) -> None:
     if not font_path:
         return
 
-    for source_type in ["danmaku", "comment"]:
-        source = keyword_metrics[keyword_metrics["source_type"] == source_type]
-        frequencies = dict(zip(source["keyword"], source["word_count"]))
-        if not frequencies:
-            continue
-        cloud = WordCloud(
-            font_path=str(font_path),
-            width=1200,
-            height=720,
-            background_color="white",
-            colormap="viridis",
-            max_words=80,
-        ).generate_from_frequencies(frequencies)
-        cloud.to_file(str(SCREENSHOT_DIR / f"{source_type}_wordcloud.png"))
+    before = danmaku_keyword_compare[
+        danmaku_keyword_compare["stage"] == "before_lottery_filter"
+    ]
+    after = danmaku_keyword_compare[
+        danmaku_keyword_compare["stage"] == "after_lottery_filter"
+    ]
+    _write_wordcloud(
+        dict(zip(before["keyword"], before["word_count"])),
+        "danmaku_wordcloud_before.png",
+        font_path,
+    )
+    _write_wordcloud(
+        dict(zip(after["keyword"], after["word_count"])),
+        "danmaku_wordcloud_after.png",
+        font_path,
+    )
+
+    after_path = SCREENSHOT_DIR / "danmaku_wordcloud_after.png"
+    legacy_path = SCREENSHOT_DIR / "danmaku_wordcloud.png"
+    if after_path.exists():
+        shutil.copyfile(after_path, legacy_path)
+
+    comment = keyword_metrics[keyword_metrics["source_type"] == "comment"]
+    _write_wordcloud(
+        dict(zip(comment["keyword"], comment["word_count"])),
+        "comment_wordcloud.png",
+        font_path,
+    )
 
 
 def process_all() -> None:
@@ -331,13 +464,35 @@ def process_all() -> None:
     duration_seconds = int(video.get("duration_seconds", 0) or 0)
 
     danmaku = pd.read_csv(PROCESSED_DIR / "danmaku_raw.csv")
+    raw_danmaku_count = len(danmaku)
     if not danmaku.empty:
         danmaku = danmaku[danmaku["video_time"].between(0, max(duration_seconds, 1))].copy()
         danmaku["clean_text"] = danmaku["danmaku_text"].map(clean_text)
         danmaku = danmaku[danmaku["clean_text"] != ""].copy()
+        danmaku["is_lottery_danmaku"] = danmaku["clean_text"].map(is_lottery_danmaku)
+        danmaku["content_clean_text"] = danmaku["clean_text"].where(
+            ~danmaku["is_lottery_danmaku"], ""
+        )
         danmaku["sentiment_score"] = danmaku["clean_text"].map(sentiment_score)
         danmaku["sentiment_label"] = danmaku["sentiment_score"].map(sentiment_label)
+    else:
+        danmaku["is_lottery_danmaku"] = []
+        danmaku["content_clean_text"] = []
     danmaku.to_csv(PROCESSED_DIR / "danmaku_clean.csv", index=False, encoding="utf-8-sig")
+
+    content_danmaku = danmaku[danmaku["content_clean_text"] != ""].copy()
+    lottery_filtered_count = int(danmaku["is_lottery_danmaku"].sum()) if not danmaku.empty else 0
+    danmaku_cleaning_summary = build_danmaku_cleaning_summary(
+        raw_count=raw_danmaku_count,
+        basic_clean_count=len(danmaku),
+        lottery_count=lottery_filtered_count,
+        content_count=len(content_danmaku),
+    )
+    danmaku_cleaning_summary.to_csv(
+        PROCESSED_DIR / "danmaku_cleaning_summary.csv",
+        index=False,
+        encoding="utf-8-sig",
+    )
 
     comments = pd.read_csv(PROCESSED_DIR / "comments_raw.csv")
     if not comments.empty:
@@ -358,9 +513,27 @@ def process_all() -> None:
         PROCESSED_DIR / "danmaku_peaks.csv", index=False, encoding="utf-8-sig"
     )
 
+    danmaku_keyword_before = build_keyword_frame(
+        "before_lottery_filter", danmaku["clean_text"], TEXT_ANALYSIS_TOP_N
+    ).rename(columns={"source_type": "stage"})
+    danmaku_keyword_after = build_keyword_frame(
+        "after_lottery_filter", content_danmaku["content_clean_text"], TEXT_ANALYSIS_TOP_N
+    ).rename(columns={"source_type": "stage"})
+    danmaku_keyword_compare = pd.concat(
+        [danmaku_keyword_before, danmaku_keyword_after],
+        ignore_index=True,
+    )
+    danmaku_keyword_compare.to_csv(
+        PROCESSED_DIR / "danmaku_keyword_compare.csv",
+        index=False,
+        encoding="utf-8-sig",
+    )
+
     keyword_metrics = pd.concat(
         [
-            build_keyword_frame("danmaku", danmaku["clean_text"], TEXT_ANALYSIS_TOP_N),
+            build_keyword_frame(
+                "danmaku", content_danmaku["content_clean_text"], TEXT_ANALYSIS_TOP_N
+            ),
             build_keyword_frame("comment", comments["clean_text"], TEXT_ANALYSIS_TOP_N),
         ],
         ignore_index=True,
@@ -400,13 +573,17 @@ def process_all() -> None:
         interaction_metrics=interaction_metrics,
         timeline=timeline,
         keyword_metrics=keyword_metrics,
+        danmaku_keyword_compare=danmaku_keyword_compare,
+        danmaku_cleaning_summary=danmaku_cleaning_summary,
         sentiment_metrics=sentiment_metrics,
         comment_like_sentiment=comment_like_sentiment,
     )
     (PROCESSED_DIR / "analysis_insights.txt").write_text(insights, encoding="utf-8")
-    generate_wordcloud(keyword_metrics)
+    generate_wordcloud(keyword_metrics, danmaku_keyword_compare)
 
     print(f"[process] danmaku_clean: {len(danmaku):,} rows")
+    print(f"[process] danmaku_lottery_filtered: {lottery_filtered_count:,} rows")
+    print(f"[process] danmaku_content_discussion: {len(content_danmaku):,} rows")
     print(f"[process] comments_clean: {len(comments):,} rows")
     print("[process] metrics and insights generated")
 

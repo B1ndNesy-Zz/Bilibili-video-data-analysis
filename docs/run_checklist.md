@@ -2,8 +2,11 @@
 
 - `python -m compileall config scripts app` 通过。
 - `python scripts/run_pipeline.py --max-comments 2000` 可完成公开数据采集、清洗、指标生成和 MySQL 入库。
-- MySQL 数据库 `bilibili_video_analysis` 中有 7 张核心表。
+- MySQL 数据库 `bilibili_video_analysis` 中有 9 张核心表。
 - `video_info` 1 行，`danmaku_info` 3523 行，`comment_info` 1947 行。
+- 新增 MySQL 表 `danmaku_cleaning_summary` 1 行，`danmaku_keyword_compare` 60 行。
+- `danmaku_cleaning_summary.csv` 显示基础清洗弹幕 3523 条、过滤抽奖弹幕 830 条、内容讨论弹幕 2693 条。
+- `danmaku_keyword_compare.csv` 可展示弹幕关键词清洗前后对比。
 - `data/processed/analysis_insights.txt` 生成真实结论。
 - `python app/app.py` 后可访问 `http://127.0.0.1:5001`。
 - `/api/health` 返回 `ok=true`。

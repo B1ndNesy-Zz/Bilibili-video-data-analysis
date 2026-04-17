@@ -62,6 +62,17 @@ def api_danmaku_peaks():
 def api_keywords():
     source = request.args.get("source", "danmaku")
     limit = int(request.args.get("limit", 30))
+    if source in {"danmaku_before", "danmaku_after"}:
+        stage_map = {
+            "danmaku_before": "before_lottery_filter",
+            "danmaku_after": "after_lottery_filter",
+        }
+        frame = read_csv("danmaku_keyword_compare.csv")
+        if frame.empty:
+            return jsonify([])
+        frame = frame[frame["stage"] == stage_map[source]].sort_values("rank_order").head(limit)
+        return jsonify(frame.to_dict(orient="records"))
+
     frame = read_csv("keyword_metrics.csv")
     if frame.empty:
         return jsonify([])
@@ -81,6 +92,14 @@ def api_sentiment():
 @app.route("/api/comment-like-sentiment")
 def api_comment_like_sentiment():
     return jsonify(records("comment_like_sentiment.csv"))
+
+
+@app.route("/api/danmaku-cleaning-summary")
+def api_danmaku_cleaning_summary():
+    frame = read_csv("danmaku_cleaning_summary.csv")
+    if frame.empty:
+        return jsonify({})
+    return jsonify(frame.iloc[0].to_dict())
 
 
 @app.route("/api/insights")
@@ -105,6 +124,8 @@ def api_health():
         "interaction_metrics.csv",
         "danmaku_timeline.csv",
         "keyword_metrics.csv",
+        "danmaku_cleaning_summary.csv",
+        "danmaku_keyword_compare.csv",
         "sentiment_metrics.csv",
     ]
     status = {filename: (PROCESSED_DIR / filename).exists() for filename in required}

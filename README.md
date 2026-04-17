@@ -8,11 +8,15 @@
 
 ![B站视频数据分析看板](docs/screenshots/dashboard_overview.png)
 
-词云结果：
+弹幕词云清洗前后对比：
 
-| 弹幕词云 | 评论词云 |
+| 弹幕词云：清洗前 | 弹幕词云：清洗后 |
 | --- | --- |
-| ![弹幕词云](docs/screenshots/danmaku_wordcloud.png) | ![评论词云](docs/screenshots/comment_wordcloud.png) |
+| ![清洗前](docs/screenshots/danmaku_wordcloud_before.png) | ![清洗后](docs/screenshots/danmaku_wordcloud_after.png) |
+
+评论词云：
+
+![评论词云](docs/screenshots/comment_wordcloud.png)
 
 ## 项目背景
 
@@ -58,6 +62,12 @@
 - `.env`、Cookie 和本地数据库密码不会提交到 GitHub。
 - GitHub 仓库不上传评论/弹幕明细和 raw 文件，只保留代码、文档、截图和聚合指标；明细数据可通过脚本在本地重新生成。
 
+## 为什么要做弹幕二次清洗
+
+该视频存在抽奖活动，公开弹幕中有较多“抽奖、中奖、参与、求中、抽中”等参与型文本。这类弹幕反映活动参与行为，但不代表用户对视频内容本身的讨论。
+
+如果直接基于弹幕做词云和关键词统计，抽奖相关词会淹没真实内容反馈。因此项目新增“抽奖弹幕整条过滤”规则，把抽奖参与弹幕从内容讨论分析中剥离，并同时展示清洗前、清洗后的关键词和词云结果。该规则是可解释的数据分析口径，不是语义分类模型。
+
 ## 核心指标
 
 互动率指标：
@@ -77,6 +87,7 @@
 - 弹幕时间轴：按 30 秒聚合弹幕数量。
 - 弹幕高峰片段：弹幕数量最高的 TOP 10 时间段。
 - 高频关键词：对弹幕和评论分别进行 jieba 分词、停用词过滤和词频统计。
+- 弹幕二次清洗：识别抽奖参与弹幕并整条过滤，用清洗前后对比体现抽奖活动对文本分析的干扰。
 - 评论情绪：使用 SnowNLP 生成情绪分数，并划分为正向、中性、负向。
 
 ## 本次运行结果
@@ -92,14 +103,16 @@
 | 弹幕数 | 685,279 |
 | 公开弹幕样本 | 3,523 |
 | 公开评论样本 | 1,947 |
+| 抽奖弹幕过滤数 | 830 |
+| 内容讨论弹幕数 | 2,693 |
 
 主要结论：
 
 1. 综合互动率约为 21.30%，其中点赞率约为 6.26%，投币率约为 5.62%。
 2. 弹幕密度最高的时间段为 00:00-00:30、12:00-12:30、28:30-29:00，说明开头、核心评测段和结尾互动较集中。
-3. 弹幕高频词包括进步、无限、抽中、中奖、手机等，评论高频词包括读者、作者、体现、中奖、抽奖等。
+3. 视频抽奖活动会显著影响弹幕词云，清洗前高频词中包含大量抽奖参与词；本次过滤 830 条抽奖弹幕后，关键词更接近内容讨论。
 4. 评论样本中正向情绪占比约 58.4%，负向约 24.8%；弹幕样本中正向约 45.8%，负向约 32.6%。
-5. 情绪识别为轻量级探索性分析，适合求职作品展示，不代表严格舆情模型结论。
+5. 情绪识别和抽奖识别均为轻量级探索性分析，适合求职作品展示，不代表严格舆情模型结论。
 
 ## 项目结构
 
@@ -179,16 +192,31 @@ http://127.0.0.1:5001
 - `data/processed/video_info.csv`
 - `data/processed/interaction_metrics.csv`
 - `data/processed/danmaku_timeline.csv`
+- `data/processed/danmaku_cleaning_summary.csv`
+- `data/processed/danmaku_keyword_compare.csv`
 - `data/processed/keyword_metrics.csv`
 - `data/processed/sentiment_metrics.csv`
 - `data/processed/analysis_insights.txt`
 
 本地运行后还会生成 `comments_clean.csv`、`danmaku_clean.csv` 和 `data/raw/` 下的采集样本。为了避免在公开仓库中长期保存评论/弹幕明细文本，这些文件默认被 `.gitignore` 排除。
 
+MySQL 入库表：
+
+- `video_info`：视频基础信息。
+- `danmaku_info`：本地弹幕明细表，不上传 GitHub。
+- `comment_info`：本地评论明细表，不上传 GitHub。
+- `interaction_metrics`：互动率指标。
+- `danmaku_timeline`：弹幕时间轴。
+- `keyword_metrics`：清洗后关键词指标。
+- `danmaku_cleaning_summary`：弹幕抽奖噪声清洗摘要。
+- `danmaku_keyword_compare`：弹幕关键词清洗前后对比。
+- `sentiment_metrics`：情绪分布指标。
+
 展示材料：
 
 - `docs/screenshots/dashboard_overview.png`
-- `docs/screenshots/danmaku_wordcloud.png`
+- `docs/screenshots/danmaku_wordcloud_before.png`
+- `docs/screenshots/danmaku_wordcloud_after.png`
 - `docs/screenshots/comment_wordcloud.png`
 - `docs/interview_script.md`
 - `docs/resume_project.md`
@@ -202,8 +230,9 @@ http://127.0.0.1:5001
 - 评论情绪环形图
 - 弹幕 30 秒时间轴
 - 弹幕高峰片段 TOP 10
+- 弹幕抽奖噪声清洗摘要
+- 弹幕关键词清洗前后对比
 - 评论情绪与平均点赞
-- 弹幕关键词 TOP 30
 - 评论关键词 TOP 30
 - 自动生成分析结论
 

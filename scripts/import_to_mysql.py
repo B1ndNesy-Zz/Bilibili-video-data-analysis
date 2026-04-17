@@ -17,6 +17,8 @@ TABLE_FILES = {
     "interaction_metrics": "interaction_metrics.csv",
     "danmaku_timeline": "danmaku_timeline.csv",
     "keyword_metrics": "keyword_metrics.csv",
+    "danmaku_cleaning_summary": "danmaku_cleaning_summary.csv",
+    "danmaku_keyword_compare": "danmaku_keyword_compare.csv",
     "sentiment_metrics": "sentiment_metrics.csv",
 }
 
@@ -84,6 +86,15 @@ TABLE_COLUMNS = {
         "danmaku_count",
     ],
     "keyword_metrics": ["source_type", "keyword", "word_count", "rank_order"],
+    "danmaku_cleaning_summary": [
+        "raw_sample_count",
+        "basic_clean_count",
+        "lottery_filtered_count",
+        "content_discussion_count",
+        "filter_ratio",
+        "retain_ratio",
+    ],
+    "danmaku_keyword_compare": ["stage", "keyword", "word_count", "rank_order"],
     "sentiment_metrics": [
         "source_type",
         "sentiment_label",
