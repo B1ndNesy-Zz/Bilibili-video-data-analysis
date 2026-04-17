@@ -2,6 +2,18 @@
 
 本项目围绕影视飓风单条爆款视频《外观变了，值得买吗？iPhone 17 Pro&Air评测》做公开视频数据分析，覆盖数据采集、清洗、文本分析、MySQL 入库和 Flask + Echarts 可视化看板。
 
+## 项目成果预览
+
+点开仓库即可先看到完整看板效果：
+
+![B站视频数据分析看板](docs/screenshots/dashboard_overview.png)
+
+词云结果：
+
+| 弹幕词云 | 评论词云 |
+| --- | --- |
+| ![弹幕词云](docs/screenshots/danmaku_wordcloud.png) | ![评论词云](docs/screenshots/comment_wordcloud.png) |
+
 ## 项目背景
 
 短视频和中长视频平台的用户反馈通常分散在播放量、点赞、投币、收藏、评论和弹幕中。单看播放量只能判断传播规模，不能解释用户讨论集中在哪些片段、评论关注什么主题、整体情绪偏向如何。
