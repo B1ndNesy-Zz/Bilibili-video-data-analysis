@@ -18,7 +18,7 @@ def read_csv(filename: str) -> pd.DataFrame:
     if not path.exists():
         return pd.DataFrame()
     frame = pd.read_csv(path)
-    return frame.where(pd.notna(frame), None)
+    return frame.astype(object).where(pd.notna(frame), None)
 
 
 def records(filename: str) -> list[dict]:
@@ -102,6 +102,46 @@ def api_danmaku_cleaning_summary():
     return jsonify(frame.iloc[0].to_dict())
 
 
+@app.route("/api/phone-feedback-summary")
+def api_phone_feedback_summary():
+    return jsonify(records("phone_feedback_summary.csv"))
+
+
+@app.route("/api/phone-feedback-sentiment")
+def api_phone_feedback_sentiment():
+    return jsonify(records("phone_feedback_sentiment.csv"))
+
+
+@app.route("/api/phone-feedback-keywords")
+def api_phone_feedback_keywords():
+    source = request.args.get("source")
+    topic = request.args.get("topic")
+    limit = int(request.args.get("limit", 30))
+    frame = read_csv("phone_feedback_keywords.csv")
+    if frame.empty:
+        return jsonify([])
+    if source:
+        frame = frame[frame["source_type"] == source]
+    if topic:
+        frame = frame[frame["phone_feedback_topic"] == topic]
+    frame = frame.sort_values("rank_order").head(limit)
+    return jsonify(frame.to_dict(orient="records"))
+
+
+@app.route("/api/phone-feedback-examples")
+def api_phone_feedback_examples():
+    source = request.args.get("source")
+    topic = request.args.get("topic")
+    frame = read_csv("phone_feedback_examples.csv")
+    if frame.empty:
+        return jsonify([])
+    if source:
+        frame = frame[frame["source_type"] == source]
+    if topic:
+        frame = frame[frame["phone_feedback_topic"] == topic]
+    return jsonify(frame.to_dict(orient="records"))
+
+
 @app.route("/api/insights")
 def api_insights():
     path = PROCESSED_DIR / "analysis_insights.txt"
@@ -127,6 +167,10 @@ def api_health():
         "danmaku_cleaning_summary.csv",
         "danmaku_keyword_compare.csv",
         "sentiment_metrics.csv",
+        "phone_feedback_summary.csv",
+        "phone_feedback_sentiment.csv",
+        "phone_feedback_keywords.csv",
+        "phone_feedback_examples.csv",
     ]
     status = {filename: (PROCESSED_DIR / filename).exists() for filename in required}
     return jsonify({"ok": all(status.values()), "files": status})

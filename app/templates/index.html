@@ -67,24 +67,66 @@
 
       <section class="cleaning-band">
         <div class="panel-head">
-          <h2>弹幕抽奖噪声清洗</h2>
-          <span>整条过滤抽奖参与弹幕</span>
+          <h2>弹幕抽奖与刷屏噪声清洗</h2>
+          <span>整条过滤抽奖、刷屏和广告弹幕</span>
         </div>
         <div class="cleaning-grid" id="cleaning-summary"></div>
+      </section>
+
+      <section class="feedback-band">
+        <div class="panel-head">
+          <h2>手机真实反馈</h2>
+          <span>仅统计外观、影像、性能、续航、购买意愿等手机相关内容</span>
+        </div>
+        <div class="feedback-summary" id="phone-feedback-summary"></div>
       </section>
 
       <section class="dashboard-grid two-col">
         <article class="panel">
           <div class="panel-head">
-            <h2>弹幕关键词：清洗前</h2>
+            <h2>手机反馈主题分布</h2>
+            <span>评论 vs 弹幕</span>
+          </div>
+          <div id="phone-feedback-topic-chart" class="chart"></div>
+        </article>
+        <article class="panel">
+          <div class="panel-head">
+            <h2>手机反馈主题情绪</h2>
+            <span>正向 / 中性 / 负向</span>
+          </div>
+          <div id="phone-feedback-sentiment-chart" class="chart"></div>
+        </article>
+      </section>
+
+      <section class="dashboard-grid two-col">
+        <article class="panel">
+          <div class="panel-head">
+            <h2>手机反馈关键词</h2>
+            <span>过滤泛评论和抽奖噪声</span>
+          </div>
+          <div id="phone-feedback-keyword-chart" class="chart"></div>
+        </article>
+        <article class="panel">
+          <div class="panel-head">
+            <h2>代表性反馈样本</h2>
+            <span>高赞评论与关键弹幕</span>
+          </div>
+          <div id="phone-feedback-examples" class="feedback-examples"></div>
+        </article>
+      </section>
+
+      <section class="dashboard-grid two-col">
+        <article class="panel">
+          <div class="panel-head">
+            <h2>弹幕关键词：原始口径</h2>
             <span>未过滤抽奖弹幕</span>
           </div>
           <div id="danmaku-before-keyword-chart" class="chart"></div>
         </article>
         <article class="panel">
           <div class="panel-head">
-            <h2>弹幕关键词：清洗后</h2>
-            <span>内容讨论口径</span>
+            <h2>弹幕关键词：内容讨论口径</h2>
+            <span>过滤抽奖、刷屏和广告</span>
           </div>
           <div id="danmaku-after-keyword-chart" class="chart"></div>
         </article>
@@ -93,8 +135,8 @@
       <section class="dashboard-grid">
         <article class="panel wide">
           <div class="panel-head">
-            <h2>评论关键词</h2>
-            <span>TOP 30</span>
+            <h2>评论关键词：原始口径</h2>
+            <span>含抽奖评论，作为对比</span>
           </div>
           <div id="comment-keyword-chart" class="chart"></div>
         </article>

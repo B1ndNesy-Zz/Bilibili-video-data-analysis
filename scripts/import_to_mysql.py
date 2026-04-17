@@ -20,6 +20,10 @@ TABLE_FILES = {
     "danmaku_cleaning_summary": "danmaku_cleaning_summary.csv",
     "danmaku_keyword_compare": "danmaku_keyword_compare.csv",
     "sentiment_metrics": "sentiment_metrics.csv",
+    "phone_feedback_summary": "phone_feedback_summary.csv",
+    "phone_feedback_sentiment": "phone_feedback_sentiment.csv",
+    "phone_feedback_keywords": "phone_feedback_keywords.csv",
+    "phone_feedback_examples": "phone_feedback_examples.csv",
 }
 
 TABLE_COLUMNS = {
@@ -49,6 +53,9 @@ TABLE_COLUMNS = {
         "time_bucket_30s",
         "danmaku_text",
         "clean_text",
+        "is_noise_text",
+        "is_phone_feedback",
+        "phone_feedback_topic",
         "sentiment_score",
         "sentiment_label",
         "send_time",
@@ -63,6 +70,9 @@ TABLE_COLUMNS = {
         "aid",
         "comment_text",
         "clean_text",
+        "is_noise_text",
+        "is_phone_feedback",
+        "phone_feedback_topic",
         "like_count",
         "reply_count",
         "comment_time",
@@ -102,6 +112,60 @@ TABLE_COLUMNS = {
         "ratio",
         "avg_score",
     ],
+    "phone_feedback_summary": [
+        "source_type",
+        "source_label",
+        "phone_feedback_topic",
+        "sample_count",
+        "source_total_count",
+        "feedback_total_count",
+        "source_ratio",
+        "topic_ratio",
+        "avg_sentiment_score",
+    ],
+    "phone_feedback_sentiment": [
+        "source_type",
+        "source_label",
+        "phone_feedback_topic",
+        "sentiment_label",
+        "sample_count",
+        "topic_total_count",
+        "ratio",
+    ],
+    "phone_feedback_keywords": [
+        "source_type",
+        "source_label",
+        "phone_feedback_topic",
+        "keyword",
+        "word_count",
+        "rank_order",
+    ],
+    "phone_feedback_examples": [
+        "source_type",
+        "source_label",
+        "phone_feedback_topic",
+        "feedback_text",
+        "like_count",
+        "reply_count",
+        "video_time",
+        "video_time_label",
+        "sentiment_label",
+        "sentiment_score",
+        "rank_order",
+    ],
+}
+
+SCHEMA_COMPAT_COLUMNS = {
+    "danmaku_info": {
+        "is_noise_text": "TINYINT(1) DEFAULT 0",
+        "is_phone_feedback": "TINYINT(1) DEFAULT 0",
+        "phone_feedback_topic": "VARCHAR(32)",
+    },
+    "comment_info": {
+        "is_noise_text": "TINYINT(1) DEFAULT 0",
+        "is_phone_feedback": "TINYINT(1) DEFAULT 0",
+        "phone_feedback_topic": "VARCHAR(32)",
+    },
 }
 
 
@@ -132,13 +196,25 @@ def init_schema() -> None:
     print("[mysql] schema initialized")
 
 
+def ensure_schema_compatibility(connection) -> None:
+    with connection.cursor() as cursor:
+        for table_name, columns in SCHEMA_COMPAT_COLUMNS.items():
+            for column_name, column_sql in columns.items():
+                cursor.execute(f"SHOW COLUMNS FROM `{table_name}` LIKE %s", (column_name,))
+                if cursor.fetchone():
+                    continue
+                cursor.execute(f"ALTER TABLE `{table_name}` ADD COLUMN `{column_name}` {column_sql}")
+                print(f"[mysql] added column {table_name}.{column_name}")
+    connection.commit()
+
+
 def _prepare_frame(path: Path, columns: list[str]) -> pd.DataFrame:
     frame = pd.read_csv(path)
     missing = [column for column in columns if column not in frame.columns]
     if missing:
         raise ValueError(f"{path.name} missing columns: {missing}")
     frame = frame[columns].copy()
-    frame = frame.where(pd.notna(frame), None)
+    frame = frame.astype(object).where(pd.notna(frame), None)
     return frame
 
 
@@ -157,6 +233,7 @@ def _insert_frame(cursor: Any, table_name: str, frame: pd.DataFrame) -> int:
 def import_all() -> None:
     init_schema()
     with _connect(with_database=True) as connection:
+        ensure_schema_compatibility(connection)
         with connection.cursor() as cursor:
             cursor.execute("SET FOREIGN_KEY_CHECKS=0")
             for table_name in TABLE_FILES:

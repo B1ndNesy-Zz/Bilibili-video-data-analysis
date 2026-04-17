@@ -83,6 +83,7 @@ main {
 .stat-card,
 .panel,
 .cleaning-band,
+.feedback-band,
 .insight-band {
   background: var(--surface);
   border: 1px solid var(--line);
@@ -161,6 +162,11 @@ main {
   margin-bottom: 20px;
 }
 
+.feedback-band {
+  padding: 18px;
+  margin-bottom: 20px;
+}
+
 .cleaning-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -188,6 +194,74 @@ main {
   line-height: 1.2;
 }
 
+.feedback-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.feedback-metric {
+  min-height: 96px;
+  padding: 16px;
+  background: #f8fafc;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.feedback-metric p {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.feedback-metric strong {
+  display: block;
+  color: var(--ink);
+  font-size: 23px;
+  line-height: 1.2;
+}
+
+.feedback-metric span {
+  display: block;
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.feedback-examples {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  min-height: 340px;
+}
+
+.feedback-example {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.feedback-example:first-child {
+  padding-top: 0;
+}
+
+.feedback-example:last-child {
+  border-bottom: 0;
+}
+
+.feedback-example p {
+  margin: 0;
+  color: #273445;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.feedback-example span {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .insight-band {
   padding: 20px 22px;
 }
@@ -212,6 +286,10 @@ main {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .feedback-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .two-col {
     grid-template-columns: 1fr;
   }
@@ -228,6 +306,10 @@ main {
   }
 
   .cleaning-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .feedback-summary {
     grid-template-columns: 1fr;
   }
 

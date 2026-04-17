@@ -11,6 +11,11 @@ function rateText(value) {
   return `${(Number(value || 0) * 100).toFixed(2)}%`;
 }
 
+function shortText(value, maxLength = 86) {
+  const text = String(value || "");
+  return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
+}
+
 async function getJson(url) {
   const response = await fetch(url);
   if (!response.ok) {
@@ -203,7 +208,7 @@ function renderCleaningSummary(data) {
   const container = document.getElementById("cleaning-summary");
   const items = [
     ["基础清洗弹幕", numberText(data.basic_clean_count)],
-    ["抽奖弹幕过滤", numberText(data.lottery_filtered_count)],
+    ["噪声弹幕过滤", numberText(data.lottery_filtered_count)],
     ["过滤比例", rateText(data.filter_ratio)],
     ["内容讨论弹幕", numberText(data.content_discussion_count)],
   ];
@@ -214,6 +219,171 @@ function renderCleaningSummary(data) {
         <strong>${value}</strong>
       </div>
     `)
+    .join("");
+}
+
+function renderPhoneFeedbackSummary(data) {
+  const container = document.getElementById("phone-feedback-summary");
+  const totals = data.reduce((acc, item) => {
+    const source = item.source_label || item.source_type;
+    if (!acc[source]) {
+      acc[source] = {
+        feedback: Number(item.feedback_total_count || 0),
+        total: Number(item.source_total_count || 0),
+      };
+    }
+    return acc;
+  }, {});
+  const topicTotals = data.reduce((acc, item) => {
+    acc[item.phone_feedback_topic] = (acc[item.phone_feedback_topic] || 0) + Number(item.sample_count || 0);
+    return acc;
+  }, {});
+  const topTopic = Object.entries(topicTotals).sort((a, b) => b[1] - a[1])[0] || ["暂无", 0];
+  const items = [
+    ...Object.entries(totals).map(([label, value]) => [
+      `${label}反馈`,
+      `${numberText(value.feedback)} / ${numberText(value.total)}`,
+      rateText(value.total ? value.feedback / value.total : 0),
+    ]),
+    ["最热主题", topTopic[0], `${numberText(topTopic[1])} 条`],
+  ];
+
+  container.innerHTML = items
+    .map(([label, value, note]) => `
+      <div class="feedback-metric">
+        <p>${label}</p>
+        <strong>${value}</strong>
+        <span>${note}</span>
+      </div>
+    `)
+    .join("");
+}
+
+function renderPhoneFeedbackTopics(data) {
+  const chart = mountChart("phone-feedback-topic-chart");
+  const topicTotals = data.reduce((acc, item) => {
+    acc[item.phone_feedback_topic] = (acc[item.phone_feedback_topic] || 0) + Number(item.sample_count || 0);
+    return acc;
+  }, {});
+  const topics = Object.entries(topicTotals)
+    .sort((a, b) => a[1] - b[1])
+    .map(([topic]) => topic);
+  const comments = topics.map((topic) => {
+    const row = data.find((item) => item.phone_feedback_topic === topic && item.source_type === "comment");
+    return row ? Number(row.sample_count || 0) : 0;
+  });
+  const danmaku = topics.map((topic) => {
+    const row = data.find((item) => item.phone_feedback_topic === topic && item.source_type === "danmaku");
+    return row ? Number(row.sample_count || 0) : 0;
+  });
+
+  chart.setOption({
+    color: ["#2f6fed", "#128c7e"],
+    tooltip: { trigger: "axis" },
+    legend: { top: 0 },
+    grid: { left: 82, right: 24, top: 36, bottom: 24 },
+    xAxis: { type: "value", splitLine: { lineStyle: { color: "#e8edf5" } } },
+    yAxis: {
+      type: "category",
+      data: topics,
+      axisTick: { show: false },
+    },
+    series: [
+      { name: "评论", type: "bar", stack: "total", data: comments },
+      { name: "弹幕", type: "bar", stack: "total", data: danmaku },
+    ],
+  });
+}
+
+function renderPhoneFeedbackSentiment(data) {
+  const chart = mountChart("phone-feedback-sentiment-chart");
+  const grouped = data.reduce((acc, item) => {
+    const topic = item.phone_feedback_topic;
+    if (!acc[topic]) {
+      acc[topic] = { 正向: 0, 中性: 0, 负向: 0, total: 0 };
+    }
+    acc[topic][item.sentiment_label] += Number(item.sample_count || 0);
+    acc[topic].total += Number(item.sample_count || 0);
+    return acc;
+  }, {});
+  const topics = Object.entries(grouped)
+    .sort((a, b) => a[1].total - b[1].total)
+    .map(([topic]) => topic);
+  const labels = ["正向", "中性", "负向"];
+
+  chart.setOption({
+    color: ["#2f6fed", "#d99a21", "#e66145"],
+    tooltip: {
+      trigger: "axis",
+      formatter(params) {
+        const total = params.reduce((sum, item) => sum + Number(item.value || 0), 0);
+        const lines = params.map((item) => `${item.seriesName}: ${numberText(item.value)} (${total ? ((Number(item.value) / total) * 100).toFixed(1) : "0.0"}%)`);
+        return `${params[0].axisValue}<br/>${lines.join("<br/>")}`;
+      },
+    },
+    legend: { top: 0 },
+    grid: { left: 82, right: 24, top: 36, bottom: 24 },
+    xAxis: { type: "value", splitLine: { lineStyle: { color: "#e8edf5" } } },
+    yAxis: { type: "category", data: topics, axisTick: { show: false } },
+    series: labels.map((label) => ({
+      name: label,
+      type: "bar",
+      stack: "sentiment",
+      data: topics.map((topic) => grouped[topic][label] || 0),
+    })),
+  });
+}
+
+function renderPhoneFeedbackKeywords(data) {
+  const chart = mountChart("phone-feedback-keyword-chart");
+  const all = data
+    .filter((item) => item.source_type === "all" && item.phone_feedback_topic === "全部反馈")
+    .slice(0, 20)
+    .reverse();
+  chart.setOption({
+    color: ["#6d5bd0"],
+    tooltip: { trigger: "axis" },
+    grid: { left: 82, right: 24, top: 12, bottom: 24 },
+    xAxis: { type: "value", splitLine: { lineStyle: { color: "#e8edf5" } } },
+    yAxis: {
+      type: "category",
+      data: all.map((item) => item.keyword),
+      axisTick: { show: false },
+    },
+    series: [
+      {
+        type: "bar",
+        data: all.map((item) => item.word_count),
+        itemStyle: { borderRadius: [0, 4, 4, 0] },
+      },
+    ],
+  });
+}
+
+function renderPhoneFeedbackExamples(data) {
+  const container = document.getElementById("phone-feedback-examples");
+  const comments = data
+    .filter((item) => item.source_type === "comment")
+    .sort((a, b) => Number(b.like_count || 0) - Number(a.like_count || 0))
+    .slice(0, 4);
+  const danmaku = data
+    .filter((item) => item.source_type === "danmaku")
+    .sort((a, b) => Number(a.video_time || 0) - Number(b.video_time || 0))
+    .slice(0, 4);
+  const rows = [...comments, ...danmaku];
+
+  container.innerHTML = rows
+    .map((item) => {
+      const meta = item.source_type === "comment"
+        ? `${item.phone_feedback_topic} · ${numberText(item.like_count)}赞 · ${item.sentiment_label}`
+        : `${item.phone_feedback_topic} · ${item.video_time_label} · ${item.sentiment_label}`;
+      return `
+        <div class="feedback-example">
+          <p>${shortText(item.feedback_text)}</p>
+          <span>${meta}</span>
+        </div>
+      `;
+    })
     .join("");
 }
 
@@ -259,6 +429,10 @@ async function init() {
     commentKeywords,
     sentiment,
     commentLike,
+    phoneFeedbackSummary,
+    phoneFeedbackSentiment,
+    phoneFeedbackKeywords,
+    phoneFeedbackExamples,
     insights,
   ] = await Promise.all([
     getJson("/api/video"),
@@ -271,6 +445,10 @@ async function init() {
     getJson("/api/keywords?source=comment&limit=30"),
     getJson("/api/sentiment"),
     getJson("/api/comment-like-sentiment"),
+    getJson("/api/phone-feedback-summary"),
+    getJson("/api/phone-feedback-sentiment"),
+    getJson("/api/phone-feedback-keywords?source=all&limit=30"),
+    getJson("/api/phone-feedback-examples"),
     getJson("/api/insights"),
   ]);
 
@@ -281,6 +459,11 @@ async function init() {
   renderPeaks(peaks);
   renderCommentLike(commentLike);
   renderCleaningSummary(cleaningSummary);
+  renderPhoneFeedbackSummary(phoneFeedbackSummary);
+  renderPhoneFeedbackTopics(phoneFeedbackSummary);
+  renderPhoneFeedbackSentiment(phoneFeedbackSentiment);
+  renderPhoneFeedbackKeywords(phoneFeedbackKeywords);
+  renderPhoneFeedbackExamples(phoneFeedbackExamples);
   renderKeywordChart("danmaku-before-keyword-chart", danmakuBeforeKeywords, "#d99a21");
   renderKeywordChart("danmaku-after-keyword-chart", danmakuAfterKeywords, "#128c7e");
   renderKeywordChart("comment-keyword-chart", commentKeywords, "#2f6fed");

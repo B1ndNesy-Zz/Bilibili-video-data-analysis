@@ -93,6 +93,13 @@ STOPWORDS = {
     "bilibili",
     "up",
     "up主",
+    "影视飓风",
+    "评测",
+    "测评",
+    "tim",
+    "今年",
+    "自己",
+    "觉得",
 }
 
 TEXT_ANALYSIS_TOP_N = 30

@@ -23,11 +23,29 @@ from config.settings import (
 )
 
 
-for word in ["影视飓风", "iPhone", "Pro", "Air", "苹果", "评测", "影像", "外观"]:
+for word in [
+    "影视飓风",
+    "iPhone",
+    "Pro",
+    "Air",
+    "苹果",
+    "评测",
+    "影像",
+    "外观",
+    "续航",
+    "散热",
+    "铝合金",
+    "钛合金",
+    "长焦",
+    "夜景",
+    "换机",
+    "标准版",
+]:
     jieba.add_word(word)
 
 
 LOTTERY_KEYWORDS = [
+    "抽我",
     "抽奖",
     "抽抽",
     "抽到",
@@ -36,8 +54,6 @@ LOTTERY_KEYWORDS = [
     "必中",
     "想中",
     "蹲奖",
-    "参与",
-    "来了",
     "冲冲冲",
     "许愿",
     "保佑",
@@ -47,23 +63,217 @@ LOTTERY_KEYWORDS = [
     "抽中",
     "奖品",
     "开奖",
-    "送我",
-    "给我",
     "选我",
     "中我",
-    "我要",
-    "想要",
-    "一台",
     "中中",
     "中一个",
     "中一次",
     "中吧",
     "可莉",
     "无限",
-    "读者",
 ]
 
 LOTTERY_PATTERN = re.compile("|".join(re.escape(keyword) for keyword in LOTTERY_KEYWORDS))
+
+SHORT_NOISE_TEXTS = {
+    "中",
+    "抽",
+    "抽我",
+    "求",
+    "求中",
+    "想要",
+    "我要",
+    "一台",
+    "中了",
+    "1",
+    "11",
+    "111",
+    "1111",
+    "11111",
+    "oi",
+    "我",
+    "我我我",
+    "我我我我",
+}
+
+AD_KEYWORDS = [
+    "咱店",
+    "店里",
+    "逛逛",
+    "壳膜",
+    "壳 膜",
+    "配件都安排",
+    "客服",
+    "下单",
+    "链接",
+    "淘宝",
+    "京东",
+    "旗舰店",
+]
+
+COPY_PASTE_NOISE_KEYWORDS = [
+    "抽奖五大原则",
+    "永不缺席",
+    "有奖必抽",
+    "从未中奖",
+    "毫无保留",
+    "拉近了作者与读者之间的距离",
+]
+
+PHONE_TOPIC_RULES = [
+    (
+        "外观设计",
+        {
+            "strong": [
+                "外观",
+                "设计",
+                "颜值",
+                "不好看",
+                "镜头模组",
+                "摄像头模组",
+                "铝合金",
+                "钛合金",
+                "机身",
+                "背板",
+                "材料",
+            ],
+            "context": [
+                "好看",
+                "丑",
+                "颜色",
+                "配色",
+                "橙色",
+                "今日橙",
+                "蓝色",
+                "深蓝",
+                "黑色",
+                "白色",
+                "质感",
+            ],
+        },
+    ),
+    (
+        "影像相机",
+        {
+            "strong": [
+                "影像",
+                "相机",
+                "摄像",
+                "镜头",
+                "拍照",
+                "拍摄",
+                "摄影",
+                "长焦",
+                "广角",
+                "焦段",
+                "夜景",
+                "曝光",
+                "星轨",
+                "光学",
+                "视频拍摄",
+                "滤镜",
+                "色彩",
+                "达芬奇",
+            ],
+            "context": [],
+        },
+    ),
+    (
+        "性能散热",
+        {
+            "strong": [
+                "性能",
+                "芯片",
+                "跑分",
+                "散热",
+                "发热",
+                "导热",
+                "功耗",
+                "a19",
+                "cpu",
+                "gpu",
+            ],
+            "context": ["游戏", "原神", "流畅", "卡顿", "掉帧", "帧率"],
+        },
+    ),
+    (
+        "屏幕手感",
+        {
+            "strong": [
+                "屏幕",
+                "刷新率",
+                "亮度",
+                "边框",
+                "大屏",
+                "小屏",
+                "尺寸",
+                "厚度",
+                "轻薄",
+                "重量",
+                "手感",
+                "握持",
+            ],
+            "context": [],
+        },
+    ),
+    (
+        "续航充电",
+        {
+            "strong": ["电池", "续航", "快充", "电量", "掉电"],
+            "context": ["充电"],
+        },
+    ),
+    (
+        "系统功能",
+        {
+            "strong": ["系统", "ios", "按钮", "按键", "接口", "usb", "typec", "信号", "卫星", "nfc"],
+            "context": ["ai", "功能"],
+        },
+    ),
+    (
+        "价格购买",
+        {
+            "strong": [
+                "价格",
+                "多少钱",
+                "换机",
+                "入手",
+                "预算",
+                "销量",
+                "加价",
+                "标准版",
+                "plus",
+                "pro系列",
+                "air",
+            ],
+            "context": ["贵", "便宜", "值得", "划算", "买", "购买"],
+        },
+    ),
+    (
+        "竞品对比",
+        {
+            "strong": [
+                "华为",
+                "mate",
+                "小米",
+                "安卓",
+                "三星",
+                "国产手机",
+                "库克",
+                "苹果",
+                "上代",
+                "上一代",
+            ],
+            "context": ["对比", "不如", "领先", "吊打", "刀法"],
+        },
+    ),
+]
+
+PHONE_SUBJECT_PATTERN = re.compile(
+    r"iphone|苹果|手机|17|pro|air|plus|标准版|这一代|这代|这款|机型|库克|华为|mate|"
+    r"小米|安卓|三星|相机|镜头|拍照|影像|屏幕|电池|续航|芯片|散热|外观|配色|价格",
+    re.IGNORECASE,
+)
 
 
 def format_seconds(seconds: int | float) -> str:
@@ -101,6 +311,80 @@ def is_lottery_danmaku(text: object) -> bool:
         or re.search(r"(抽|求|想|蹲|许愿).{0,6}(中|奖)", compact)
         or re.search(r"(中|奖).{0,4}(我|吧|一次|一个|一台)", compact)
     )
+
+
+def compact_text(text: object) -> str:
+    if pd.isna(text):
+        return ""
+    return re.sub(r"\s+", "", str(text).lower())
+
+
+def is_noise_text(text: object) -> bool:
+    """Filter lottery, screen-flooding, ads, and copied comment templates."""
+    compact = compact_text(text)
+    if not compact:
+        return True
+    if compact in SHORT_NOISE_TEXTS:
+        return True
+    if re.fullmatch(r"[0-9]+", compact):
+        return True
+    if re.fullmatch(r"中+", compact):
+        return True
+    if is_lottery_danmaku(compact):
+        return True
+    if any(keyword.replace(" ", "") in compact for keyword in AD_KEYWORDS):
+        return True
+    if any(keyword.replace(" ", "") in compact for keyword in COPY_PASTE_NOISE_KEYWORDS):
+        return True
+    if re.search(r"(抽|求|想|蹲|许愿).{0,8}(中|奖|iphone|手机)", compact):
+        return True
+    if re.search(r"(中|奖).{0,6}(我|吧|一次|一个|一台|手机|iphone)", compact):
+        return True
+    if re.search(r"(送|给).{0,2}我.{0,4}(一台|手机|iphone|17)", compact):
+        return True
+    return False
+
+
+def _keyword_hit_count(text: str, keywords: list[str]) -> int:
+    return sum(text.count(keyword.lower()) for keyword in keywords)
+
+
+def classify_phone_feedback_topic(text: object, is_noise: bool = False) -> str:
+    """Classify a cleaned text into one explainable phone-feedback topic."""
+    if is_noise:
+        return ""
+    compact = compact_text(text)
+    if not compact:
+        return ""
+
+    has_phone_subject = bool(PHONE_SUBJECT_PATTERN.search(compact))
+    candidates: list[tuple[int, int, str]] = []
+    for index, (topic, rules) in enumerate(PHONE_TOPIC_RULES):
+        strong_score = _keyword_hit_count(compact, rules["strong"])
+        context_score = _keyword_hit_count(compact, rules["context"]) if has_phone_subject else 0
+        score = strong_score * 2 + context_score
+        if score > 0 and (strong_score > 0 or has_phone_subject):
+            candidates.append((score, -index, topic))
+
+    if not candidates:
+        return ""
+    candidates.sort(reverse=True)
+    return candidates[0][2]
+
+
+def add_feedback_columns(frame: pd.DataFrame) -> pd.DataFrame:
+    if frame.empty:
+        frame["is_noise_text"] = []
+        frame["is_phone_feedback"] = []
+        frame["phone_feedback_topic"] = []
+        return frame
+    frame["is_noise_text"] = frame["clean_text"].map(is_noise_text)
+    frame["phone_feedback_topic"] = frame.apply(
+        lambda row: classify_phone_feedback_topic(row["clean_text"], bool(row["is_noise_text"])),
+        axis=1,
+    )
+    frame["is_phone_feedback"] = frame["phone_feedback_topic"] != ""
+    return frame
 
 
 def sentiment_score(text: str) -> float:
@@ -301,6 +585,261 @@ def build_comment_like_sentiment(comments: pd.DataFrame) -> pd.DataFrame:
     return grouped
 
 
+PHONE_FEEDBACK_SUMMARY_COLUMNS = [
+    "source_type",
+    "source_label",
+    "phone_feedback_topic",
+    "sample_count",
+    "source_total_count",
+    "feedback_total_count",
+    "source_ratio",
+    "topic_ratio",
+    "avg_sentiment_score",
+]
+
+PHONE_FEEDBACK_SENTIMENT_COLUMNS = [
+    "source_type",
+    "source_label",
+    "phone_feedback_topic",
+    "sentiment_label",
+    "sample_count",
+    "topic_total_count",
+    "ratio",
+]
+
+PHONE_FEEDBACK_KEYWORD_COLUMNS = [
+    "source_type",
+    "source_label",
+    "phone_feedback_topic",
+    "keyword",
+    "word_count",
+    "rank_order",
+]
+
+PHONE_FEEDBACK_EXAMPLE_COLUMNS = [
+    "source_type",
+    "source_label",
+    "phone_feedback_topic",
+    "feedback_text",
+    "like_count",
+    "reply_count",
+    "video_time",
+    "video_time_label",
+    "sentiment_label",
+    "sentiment_score",
+    "rank_order",
+]
+
+
+def _source_frame(source_type: str, source_label: str, frame: pd.DataFrame) -> pd.DataFrame:
+    if frame.empty:
+        return pd.DataFrame()
+    result = frame.copy()
+    result["source_type"] = source_type
+    result["source_label"] = source_label
+    return result
+
+
+def _feedback_sources(danmaku: pd.DataFrame, comments: pd.DataFrame) -> list[pd.DataFrame]:
+    return [
+        _source_frame("danmaku", "弹幕", danmaku),
+        _source_frame("comment", "评论", comments),
+    ]
+
+
+def build_phone_feedback_summary(danmaku: pd.DataFrame, comments: pd.DataFrame) -> pd.DataFrame:
+    rows = []
+    for source in _feedback_sources(danmaku, comments):
+        if source.empty:
+            continue
+        source_total = len(source)
+        feedback = source[source["is_phone_feedback"]].copy()
+        feedback_total = len(feedback)
+        if feedback.empty:
+            continue
+        grouped = (
+            feedback.groupby(["source_type", "source_label", "phone_feedback_topic"])
+            .agg(
+                sample_count=("phone_feedback_topic", "size"),
+                avg_sentiment_score=("sentiment_score", "mean"),
+            )
+            .reset_index()
+        )
+        grouped["source_total_count"] = source_total
+        grouped["feedback_total_count"] = feedback_total
+        grouped["source_ratio"] = grouped["sample_count"] / source_total
+        grouped["topic_ratio"] = grouped["sample_count"] / feedback_total
+        grouped["avg_sentiment_score"] = grouped["avg_sentiment_score"].round(4)
+        grouped["source_ratio"] = grouped["source_ratio"].round(4)
+        grouped["topic_ratio"] = grouped["topic_ratio"].round(4)
+        rows.append(grouped)
+
+    if not rows:
+        return pd.DataFrame(columns=PHONE_FEEDBACK_SUMMARY_COLUMNS)
+
+    result = pd.concat(rows, ignore_index=True)
+    topic_order = {topic: index for index, (topic, _) in enumerate(PHONE_TOPIC_RULES)}
+    source_order = {"comment": 1, "danmaku": 2}
+    result["topic_order"] = result["phone_feedback_topic"].map(topic_order).fillna(99)
+    result["source_order"] = result["source_type"].map(source_order).fillna(99)
+    result = result.sort_values(["topic_order", "source_order"])
+    return result[PHONE_FEEDBACK_SUMMARY_COLUMNS]
+
+
+def build_phone_feedback_sentiment(danmaku: pd.DataFrame, comments: pd.DataFrame) -> pd.DataFrame:
+    rows = []
+    for source in _feedback_sources(danmaku, comments):
+        if source.empty:
+            continue
+        feedback = source[source["is_phone_feedback"]].copy()
+        if feedback.empty:
+            continue
+        grouped = (
+            feedback.groupby(
+                ["source_type", "source_label", "phone_feedback_topic", "sentiment_label"]
+            )
+            .size()
+            .reset_index(name="sample_count")
+        )
+        grouped["topic_total_count"] = grouped.groupby(
+            ["source_type", "phone_feedback_topic"]
+        )["sample_count"].transform("sum")
+        grouped["ratio"] = (grouped["sample_count"] / grouped["topic_total_count"]).round(4)
+        rows.append(grouped)
+
+    if not rows:
+        return pd.DataFrame(columns=PHONE_FEEDBACK_SENTIMENT_COLUMNS)
+
+    result = pd.concat(rows, ignore_index=True)
+    topic_order = {topic: index for index, (topic, _) in enumerate(PHONE_TOPIC_RULES)}
+    sentiment_order = {"正向": 1, "中性": 2, "负向": 3}
+    result["topic_order"] = result["phone_feedback_topic"].map(topic_order).fillna(99)
+    result["sentiment_order"] = result["sentiment_label"].map(sentiment_order).fillna(99)
+    result = result.sort_values(["topic_order", "source_type", "sentiment_order"])
+    return result[PHONE_FEEDBACK_SENTIMENT_COLUMNS]
+
+
+def build_phone_feedback_keywords(
+    danmaku: pd.DataFrame,
+    comments: pd.DataFrame,
+    top_n: int,
+) -> pd.DataFrame:
+    rows = []
+    sources = _feedback_sources(danmaku, comments)
+    combined_feedback = []
+    for source in sources:
+        if source.empty:
+            continue
+        feedback = source[source["is_phone_feedback"]].copy()
+        if feedback.empty:
+            continue
+        combined_feedback.append(feedback)
+        source_type = str(feedback["source_type"].iloc[0])
+        source_label = str(feedback["source_label"].iloc[0])
+
+        source_counter = tokenize_texts(feedback["clean_text"])
+        for rank, (keyword, count) in enumerate(source_counter.most_common(top_n), start=1):
+            rows.append(
+                {
+                    "source_type": source_type,
+                    "source_label": source_label,
+                    "phone_feedback_topic": "全部反馈",
+                    "keyword": keyword,
+                    "word_count": count,
+                    "rank_order": rank,
+                }
+            )
+
+        for topic, topic_frame in feedback.groupby("phone_feedback_topic"):
+            counter = tokenize_texts(topic_frame["clean_text"])
+            for rank, (keyword, count) in enumerate(counter.most_common(top_n), start=1):
+                rows.append(
+                    {
+                        "source_type": source_type,
+                        "source_label": source_label,
+                        "phone_feedback_topic": topic,
+                        "keyword": keyword,
+                        "word_count": count,
+                        "rank_order": rank,
+                    }
+                )
+
+    if combined_feedback:
+        all_feedback = pd.concat(combined_feedback, ignore_index=True)
+        all_counter = tokenize_texts(all_feedback["clean_text"])
+        for rank, (keyword, count) in enumerate(all_counter.most_common(top_n), start=1):
+            rows.append(
+                {
+                    "source_type": "all",
+                    "source_label": "整体",
+                    "phone_feedback_topic": "全部反馈",
+                    "keyword": keyword,
+                    "word_count": count,
+                    "rank_order": rank,
+                }
+            )
+
+    if not rows:
+        return pd.DataFrame(columns=PHONE_FEEDBACK_KEYWORD_COLUMNS)
+    return pd.DataFrame(rows)[PHONE_FEEDBACK_KEYWORD_COLUMNS]
+
+
+def build_phone_feedback_examples(
+    danmaku: pd.DataFrame,
+    comments: pd.DataFrame,
+    per_topic: int = 3,
+) -> pd.DataFrame:
+    rows = []
+    if not comments.empty:
+        feedback = comments[comments["is_phone_feedback"]].copy()
+        if not feedback.empty:
+            feedback["like_count"] = pd.to_numeric(feedback["like_count"], errors="coerce").fillna(0)
+            for topic, topic_frame in feedback.groupby("phone_feedback_topic"):
+                selected = topic_frame.sort_values("like_count", ascending=False).head(per_topic)
+                for rank, row in enumerate(selected.itertuples(index=False), start=1):
+                    rows.append(
+                        {
+                            "source_type": "comment",
+                            "source_label": "评论",
+                            "phone_feedback_topic": topic,
+                            "feedback_text": row.clean_text,
+                            "like_count": int(row.like_count or 0),
+                            "reply_count": int(getattr(row, "reply_count", 0) or 0),
+                            "video_time": None,
+                            "video_time_label": "",
+                            "sentiment_label": row.sentiment_label,
+                            "sentiment_score": row.sentiment_score,
+                            "rank_order": rank,
+                        }
+                    )
+
+    if not danmaku.empty:
+        feedback = danmaku[danmaku["is_phone_feedback"]].copy()
+        if not feedback.empty:
+            for topic, topic_frame in feedback.groupby("phone_feedback_topic"):
+                selected = topic_frame.sort_values(["video_time", "sample_id"]).head(per_topic)
+                for rank, row in enumerate(selected.itertuples(index=False), start=1):
+                    rows.append(
+                        {
+                            "source_type": "danmaku",
+                            "source_label": "弹幕",
+                            "phone_feedback_topic": topic,
+                            "feedback_text": row.clean_text,
+                            "like_count": None,
+                            "reply_count": None,
+                            "video_time": row.video_time,
+                            "video_time_label": format_seconds(row.video_time),
+                            "sentiment_label": row.sentiment_label,
+                            "sentiment_score": row.sentiment_score,
+                            "rank_order": rank,
+                        }
+                    )
+
+    if not rows:
+        return pd.DataFrame(columns=PHONE_FEEDBACK_EXAMPLE_COLUMNS)
+    return pd.DataFrame(rows)[PHONE_FEEDBACK_EXAMPLE_COLUMNS]
+
+
 def _format_number(value: int | float) -> str:
     return f"{int(value):,}"
 
@@ -314,6 +853,9 @@ def build_insights(
     danmaku_cleaning_summary: pd.DataFrame,
     sentiment_metrics: pd.DataFrame,
     comment_like_sentiment: pd.DataFrame,
+    phone_feedback_summary: pd.DataFrame,
+    phone_feedback_sentiment: pd.DataFrame,
+    phone_feedback_examples: pd.DataFrame,
 ) -> str:
     top_peaks = timeline.sort_values("danmaku_count", ascending=False).head(3)
     peak_text = "、".join(
@@ -376,10 +918,72 @@ def build_insights(
     if not danmaku_cleaning_summary.empty:
         summary = danmaku_cleaning_summary.iloc[0]
         lottery_line = (
-            f"弹幕二次清洗识别并过滤抽奖参与弹幕 {int(summary['lottery_filtered_count']):,} 条，"
+            f"弹幕二次清洗识别并过滤抽奖、刷屏等噪声弹幕 {int(summary['lottery_filtered_count']):,} 条，"
             f"过滤比例约 {float(summary['filter_ratio']):.1%}；清洗后保留内容讨论弹幕 "
             f"{int(summary['content_discussion_count']):,} 条。"
         )
+
+    feedback_line = "手机反馈样本不足。"
+    topic_line = "手机反馈主题样本不足。"
+    example_line = ""
+    if not phone_feedback_summary.empty:
+        total_by_source = (
+            phone_feedback_summary.groupby(["source_type", "source_label"])
+            .agg(
+                feedback_total_count=("feedback_total_count", "max"),
+                source_total_count=("source_total_count", "max"),
+            )
+            .reset_index()
+        )
+        source_parts = [
+            f"{row.source_label}{int(row.feedback_total_count):,}条，占样本{row.feedback_total_count / max(int(row.source_total_count), 1):.1%}"
+            for row in total_by_source.itertuples(index=False)
+        ]
+        feedback_line = "本次从弹幕和评论中筛选手机真实反馈：" + "；".join(source_parts) + "。"
+
+        topic_totals = (
+            phone_feedback_summary.groupby("phone_feedback_topic")["sample_count"]
+            .sum()
+            .sort_values(ascending=False)
+        )
+        top_topics = "、".join(
+            f"{topic}({int(count)}条)" for topic, count in topic_totals.head(3).items()
+        )
+        topic_line = f"手机反馈最集中的主题为：{top_topics or '暂无'}。"
+
+    if not phone_feedback_sentiment.empty:
+        sentiment_topic = (
+            phone_feedback_sentiment.groupby(["phone_feedback_topic", "sentiment_label"])[
+                "sample_count"
+            ]
+            .sum()
+            .reset_index()
+        )
+        topic_total = sentiment_topic.groupby("phone_feedback_topic")["sample_count"].transform("sum")
+        sentiment_topic["ratio"] = sentiment_topic["sample_count"] / topic_total
+        negative = sentiment_topic[sentiment_topic["sentiment_label"] == "负向"].sort_values(
+            "ratio", ascending=False
+        )
+        positive = sentiment_topic[sentiment_topic["sentiment_label"] == "正向"].sort_values(
+            "ratio", ascending=False
+        )
+        if not negative.empty and not positive.empty:
+            topic_line += (
+                f" 正向占比较高的主题是{positive.iloc[0]['phone_feedback_topic']}，"
+                f"负向占比较高的主题是{negative.iloc[0]['phone_feedback_topic']}。"
+            )
+
+    if not phone_feedback_examples.empty:
+        comment_examples = phone_feedback_examples[
+            phone_feedback_examples["source_type"] == "comment"
+        ].copy()
+        if not comment_examples.empty:
+            top_comment = comment_examples.sort_values("like_count", ascending=False).iloc[0]
+            excerpt = str(top_comment["feedback_text"])[:48]
+            example_line = (
+                f"高赞手机反馈样本来自{top_comment['phone_feedback_topic']}主题，"
+                f"点赞数约{int(top_comment['like_count'])}，内容摘录：{excerpt}。"
+            )
 
     lines = [
         f"1. 本项目分析视频《{video.get('title', '')}》，公开视频播放量为 {_format_number(video.get('view_count', 0))}，评论数为 {_format_number(video.get('reply_count', 0))}，弹幕数为 {_format_number(video.get('danmaku_count', 0))}。",
@@ -387,8 +991,10 @@ def build_insights(
         f"3. 弹幕密度最高的时间段集中在：{peak_text or '暂无'}，可作为定位视频高讨论片段的依据。",
         f"4. 抽奖活动对弹幕关键词造成明显干扰，清洗前高频词包括：{'、'.join(danmaku_before_keywords) or '暂无'}；清洗后更接近内容讨论，高频词包括：{'、'.join(danmaku_after_keywords) or '暂无'}。",
         f"5. {lottery_line}",
-        f"6. 评论高频词包括：{'、'.join(comment_keywords) or '暂无'}。{'；'.join(sentiment_lines) or '情绪样本不足'}。{like_line}",
-        "7. 弹幕抽奖识别使用可解释的业务规则；情绪识别基于 SnowNLP 的轻量级中文情感模型，结果适合做作品展示和探索性分析，不代表严格的舆情模型结论。",
+        f"6. 原始评论高频词包括：{'、'.join(comment_keywords) or '暂无'}，其中仍包含抽奖评论噪声；手机反馈关键词已单独输出。{'；'.join(sentiment_lines) or '情绪样本不足'}。{like_line}",
+        f"7. {feedback_line}",
+        f"8. {topic_line}{example_line}",
+        "9. 弹幕噪声识别和手机反馈主题分类均使用可解释的业务规则；情绪识别基于 SnowNLP 的轻量级中文情感模型，结果适合做作品展示和探索性分析，不代表严格的舆情模型结论。",
     ]
     return "\n".join(lines)
 
@@ -470,22 +1076,33 @@ def process_all() -> None:
         danmaku["clean_text"] = danmaku["danmaku_text"].map(clean_text)
         danmaku = danmaku[danmaku["clean_text"] != ""].copy()
         danmaku["is_lottery_danmaku"] = danmaku["clean_text"].map(is_lottery_danmaku)
+        danmaku = add_feedback_columns(danmaku)
         danmaku["content_clean_text"] = danmaku["clean_text"].where(
-            ~danmaku["is_lottery_danmaku"], ""
+            ~danmaku["is_noise_text"], ""
         )
         danmaku["sentiment_score"] = danmaku["clean_text"].map(sentiment_score)
         danmaku["sentiment_label"] = danmaku["sentiment_score"].map(sentiment_label)
+        danmaku["phone_feedback_topic"] = danmaku.apply(
+            lambda row: classify_phone_feedback_topic(
+                row["clean_text"], bool(row["is_noise_text"])
+            ),
+            axis=1,
+        )
+        danmaku["is_phone_feedback"] = danmaku["phone_feedback_topic"] != ""
     else:
         danmaku["is_lottery_danmaku"] = []
+        danmaku["is_noise_text"] = []
         danmaku["content_clean_text"] = []
+        danmaku["is_phone_feedback"] = []
+        danmaku["phone_feedback_topic"] = []
     danmaku.to_csv(PROCESSED_DIR / "danmaku_clean.csv", index=False, encoding="utf-8-sig")
 
     content_danmaku = danmaku[danmaku["content_clean_text"] != ""].copy()
-    lottery_filtered_count = int(danmaku["is_lottery_danmaku"].sum()) if not danmaku.empty else 0
+    noise_filtered_count = int(danmaku["is_noise_text"].sum()) if not danmaku.empty else 0
     danmaku_cleaning_summary = build_danmaku_cleaning_summary(
         raw_count=raw_danmaku_count,
         basic_clean_count=len(danmaku),
-        lottery_count=lottery_filtered_count,
+        lottery_count=noise_filtered_count,
         content_count=len(content_danmaku),
     )
     danmaku_cleaning_summary.to_csv(
@@ -498,8 +1115,20 @@ def process_all() -> None:
     if not comments.empty:
         comments["clean_text"] = comments["comment_text"].map(clean_text)
         comments = comments[comments["clean_text"] != ""].copy()
+        comments = add_feedback_columns(comments)
         comments["sentiment_score"] = comments["clean_text"].map(sentiment_score)
         comments["sentiment_label"] = comments["sentiment_score"].map(sentiment_label)
+        comments["phone_feedback_topic"] = comments.apply(
+            lambda row: classify_phone_feedback_topic(
+                row["clean_text"], bool(row["is_noise_text"])
+            ),
+            axis=1,
+        )
+        comments["is_phone_feedback"] = comments["phone_feedback_topic"] != ""
+    else:
+        comments["is_noise_text"] = []
+        comments["is_phone_feedback"] = []
+        comments["phone_feedback_topic"] = []
     comments.to_csv(PROCESSED_DIR / "comments_clean.csv", index=False, encoding="utf-8-sig")
 
     interaction_metrics = build_interaction_metrics(video)
@@ -561,6 +1190,28 @@ def process_all() -> None:
         PROCESSED_DIR / "comment_like_sentiment.csv", index=False, encoding="utf-8-sig"
     )
 
+    phone_feedback_summary = build_phone_feedback_summary(danmaku, comments)
+    phone_feedback_summary.to_csv(
+        PROCESSED_DIR / "phone_feedback_summary.csv", index=False, encoding="utf-8-sig"
+    )
+
+    phone_feedback_sentiment = build_phone_feedback_sentiment(danmaku, comments)
+    phone_feedback_sentiment.to_csv(
+        PROCESSED_DIR / "phone_feedback_sentiment.csv", index=False, encoding="utf-8-sig"
+    )
+
+    phone_feedback_keywords = build_phone_feedback_keywords(
+        danmaku, comments, TEXT_ANALYSIS_TOP_N
+    )
+    phone_feedback_keywords.to_csv(
+        PROCESSED_DIR / "phone_feedback_keywords.csv", index=False, encoding="utf-8-sig"
+    )
+
+    phone_feedback_examples = build_phone_feedback_examples(danmaku, comments)
+    phone_feedback_examples.to_csv(
+        PROCESSED_DIR / "phone_feedback_examples.csv", index=False, encoding="utf-8-sig"
+    )
+
     tableau_timeline = timeline.copy()
     tableau_timeline["bvid"] = video.get("bvid", "")
     tableau_timeline["title"] = video.get("title", "")
@@ -577,14 +1228,18 @@ def process_all() -> None:
         danmaku_cleaning_summary=danmaku_cleaning_summary,
         sentiment_metrics=sentiment_metrics,
         comment_like_sentiment=comment_like_sentiment,
+        phone_feedback_summary=phone_feedback_summary,
+        phone_feedback_sentiment=phone_feedback_sentiment,
+        phone_feedback_examples=phone_feedback_examples,
     )
     (PROCESSED_DIR / "analysis_insights.txt").write_text(insights, encoding="utf-8")
     generate_wordcloud(keyword_metrics, danmaku_keyword_compare)
 
     print(f"[process] danmaku_clean: {len(danmaku):,} rows")
-    print(f"[process] danmaku_lottery_filtered: {lottery_filtered_count:,} rows")
+    print(f"[process] danmaku_noise_filtered: {noise_filtered_count:,} rows")
     print(f"[process] danmaku_content_discussion: {len(content_danmaku):,} rows")
     print(f"[process] comments_clean: {len(comments):,} rows")
+    print(f"[process] phone_feedback: {int(comments['is_phone_feedback'].sum()) if not comments.empty else 0:,} comments, {int(danmaku['is_phone_feedback'].sum()) if not danmaku.empty else 0:,} danmaku")
     print("[process] metrics and insights generated")
 
 
