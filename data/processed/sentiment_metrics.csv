@@ -1,0 +1,7 @@
+﻿source_type,sentiment_label,sample_count,ratio,avg_score
+danmaku,正向,1614,0.4581,0.8091
+danmaku,中性,762,0.2163,0.4974
+danmaku,负向,1147,0.3256,0.2985
+comment,正向,1136,0.5835,0.8977
+comment,中性,328,0.1685,0.5022
+comment,负向,483,0.2481,0.1899

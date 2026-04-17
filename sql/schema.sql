@@ -1,0 +1,98 @@
+CREATE DATABASE IF NOT EXISTS bilibili_video_analysis
+  DEFAULT CHARACTER SET utf8mb4
+  DEFAULT COLLATE utf8mb4_unicode_ci;
+
+USE bilibili_video_analysis;
+
+CREATE TABLE IF NOT EXISTS video_info (
+  video_id INT AUTO_INCREMENT PRIMARY KEY,
+  bvid VARCHAR(32) NOT NULL UNIQUE,
+  aid BIGINT NOT NULL,
+  cid BIGINT NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  up_name VARCHAR(100),
+  up_mid BIGINT,
+  duration_seconds INT,
+  view_count BIGINT,
+  danmaku_count BIGINT,
+  reply_count BIGINT,
+  favorite_count BIGINT,
+  coin_count BIGINT,
+  share_count BIGINT,
+  like_count BIGINT,
+  his_rank INT,
+  collect_time DATETIME
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS danmaku_info (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  bvid VARCHAR(32) NOT NULL,
+  cid BIGINT NOT NULL,
+  video_time DOUBLE,
+  video_minute INT,
+  time_bucket_30s INT,
+  danmaku_text TEXT,
+  clean_text TEXT,
+  sentiment_score DOUBLE,
+  sentiment_label VARCHAR(20),
+  send_time DATETIME NULL,
+  mode INT,
+  font_size INT,
+  color INT,
+  collect_time DATETIME,
+  INDEX idx_danmaku_bucket (time_bucket_30s),
+  INDEX idx_danmaku_sentiment (sentiment_label)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS comment_info (
+  comment_id VARCHAR(64) PRIMARY KEY,
+  bvid VARCHAR(32) NOT NULL,
+  aid BIGINT NOT NULL,
+  comment_text TEXT,
+  clean_text TEXT,
+  like_count INT,
+  reply_count INT,
+  comment_time DATETIME NULL,
+  sentiment_score DOUBLE,
+  sentiment_label VARCHAR(20),
+  collect_time DATETIME,
+  INDEX idx_comment_sentiment (sentiment_label),
+  INDEX idx_comment_like (like_count)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS interaction_metrics (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  metric_name VARCHAR(64) NOT NULL UNIQUE,
+  metric_label VARCHAR(64) NOT NULL,
+  metric_value BIGINT,
+  metric_rate DOUBLE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS danmaku_timeline (
+  time_bucket_30s INT PRIMARY KEY,
+  start_sec INT,
+  end_sec INT,
+  start_label VARCHAR(16),
+  end_label VARCHAR(16),
+  time_range VARCHAR(32),
+  danmaku_count INT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS keyword_metrics (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  source_type VARCHAR(32) NOT NULL,
+  keyword VARCHAR(80) NOT NULL,
+  word_count INT NOT NULL,
+  rank_order INT NOT NULL,
+  UNIQUE KEY uk_source_keyword (source_type, keyword)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS sentiment_metrics (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  source_type VARCHAR(32) NOT NULL,
+  sentiment_label VARCHAR(20) NOT NULL,
+  sample_count INT NOT NULL,
+  ratio DOUBLE,
+  avg_score DOUBLE,
+  UNIQUE KEY uk_source_sentiment (source_type, sentiment_label)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

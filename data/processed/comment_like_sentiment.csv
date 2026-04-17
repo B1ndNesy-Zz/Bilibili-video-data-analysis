@@ -1,0 +1,4 @@
+﻿sentiment_label,sample_count,avg_like_count,median_like_count
+中性,328,174.3,6.0
+正向,1136,81.71,6.0
+负向,483,73.73,6.0

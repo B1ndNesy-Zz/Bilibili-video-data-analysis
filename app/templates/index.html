@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>B站爆款视频弹幕互动与评论情绪分析</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Bilibili Video Analytics</p>
+        <h1 id="video-title">B站爆款视频弹幕互动与评论情绪分析</h1>
+        <p class="subtitle" id="video-meta">影视飓风 · 单视频公开数据分析</p>
+      </div>
+      <a class="video-link" href="https://www.bilibili.com/video/BV1Enpxz5Ef3/" target="_blank" rel="noreferrer">打开视频</a>
+    </header>
+
+    <main>
+      <section class="summary-grid" id="summary-grid"></section>
+
+      <section class="dashboard-grid two-col">
+        <article class="panel">
+          <div class="panel-head">
+            <h2>互动率结构</h2>
+            <span>公开统计口径</span>
+          </div>
+          <div id="interaction-chart" class="chart"></div>
+        </article>
+        <article class="panel">
+          <div class="panel-head">
+            <h2>评论情绪分布</h2>
+            <span>SnowNLP 轻量分类</span>
+          </div>
+          <div id="sentiment-chart" class="chart"></div>
+        </article>
+      </section>
+
+      <section class="dashboard-grid">
+        <article class="panel wide">
+          <div class="panel-head">
+            <h2>弹幕时间轴</h2>
+            <span>每 30 秒弹幕密度</span>
+          </div>
+          <div id="timeline-chart" class="chart chart-large"></div>
+        </article>
+      </section>
+
+      <section class="dashboard-grid two-col">
+        <article class="panel">
+          <div class="panel-head">
+            <h2>弹幕高峰片段</h2>
+            <span>TOP 10 时间段</span>
+          </div>
+          <div id="peaks-chart" class="chart"></div>
+        </article>
+        <article class="panel">
+          <div class="panel-head">
+            <h2>评论点赞与情绪</h2>
+            <span>样本评论聚合</span>
+          </div>
+          <div id="comment-like-chart" class="chart"></div>
+        </article>
+      </section>
+
+      <section class="dashboard-grid two-col">
+        <article class="panel">
+          <div class="panel-head">
+            <h2>弹幕关键词</h2>
+            <span>TOP 30</span>
+          </div>
+          <div id="danmaku-keyword-chart" class="chart"></div>
+        </article>
+        <article class="panel">
+          <div class="panel-head">
+            <h2>评论关键词</h2>
+            <span>TOP 30</span>
+          </div>
+          <div id="comment-keyword-chart" class="chart"></div>
+        </article>
+      </section>
+
+      <section class="insight-band">
+        <div class="panel-head">
+          <h2>分析结论</h2>
+          <span>自动生成</span>
+        </div>
+        <ol id="insights"></ol>
+      </section>
+    </main>
+
+    <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+  </body>
+</html>

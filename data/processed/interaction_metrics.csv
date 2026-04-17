@@ -1,0 +1,8 @@
+﻿metric_name,metric_label,metric_value,metric_rate
+like_rate,点赞率,961581,0.062578
+coin_rate,投币率,863150,0.056173
+favorite_rate,收藏率,306020,0.019915
+share_rate,分享率,272268,0.017719
+reply_rate,评论率,184449,0.012004
+danmaku_rate,弹幕率,685279,0.044597
+overall_interaction_rate,综合互动率,3272747,0.212986
